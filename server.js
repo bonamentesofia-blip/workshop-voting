@@ -229,7 +229,7 @@ app.get('/admin', async (req, res) => {
 
   const phase2Url = `${base}/vote`;
   const phase2QrDataUrl = await QRCode.toDataURL(phase2Url, { width: 250, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } });
-  const phase2Html = STATE.winners.length > 0 ? `
+  const phase2Html = `
     <div class="section" style="border:2px solid #fbbf24">
       <h2 style="color:#b45309">Phase 2 — Grand Final Vote</h2>
       <p style="font-size:0.8rem;color:#64748b;margin-bottom:16px">Condividi questo QR code con tutti (giudici + team). Un voto per dispositivo.</p>
@@ -238,15 +238,16 @@ app.get('/admin', async (req, res) => {
         <div>
           <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px">URL fase 2</div>
           <div style="font-size:0.9rem;color:#1e293b;font-weight:600;word-break:break-all">${phase2Url}</div>
+          ${STATE.winners.length > 0 ? `
           <div style="margin-top:16px;font-size:0.8rem;color:#64748b">Finalisti:</div>
           ${STATE.winners.map(id => {
             const t = STATE.teams.find(t => t.id === id);
             const bc = STATE.businessCases.find(b => b.id === t.caseId);
             return `<div style="font-size:0.9rem;font-weight:600;color:${bc.color};margin-top:4px">• ${t.name} <span style="color:#94a3b8;font-weight:400">(${bc.name})</span></div>`;
-          }).join('')}
+          }).join('')}` : `<div style="margin-top:12px;font-size:0.8rem;color:#94a3b8;font-style:italic">Finalisti non ancora impostati</div>`}
         </div>
       </div>
-    </div>` : '';
+    </div>`;
 
   const judgesHtml = qrImages.map(({ judge, url, dataUrl, teams }) => `
     <div class="judge-card">
