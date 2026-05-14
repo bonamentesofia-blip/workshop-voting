@@ -124,35 +124,69 @@
     font-style: italic;
   }
 
-  /* PHASE 2 */
-  #phase2 { display: none; padding: 40px 20px; max-width: 900px; margin: 0 auto; }
-  #phase2 h2 { text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase; }
-  #phase2 .subtitle { text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 40px; }
-  .finalist-card {
-    background: #111;
-    border-radius: 20px;
-    padding: 28px 32px;
-    margin-bottom: 16px;
+  /* PHASE 2 — PODIUM */
+  #phase2 { display: none; padding: 20px 20px 40px; max-width: 1200px; margin: 0 auto; }
+  #phase2 .subtitle { text-align: center; color: rgba(255,255,255,0.35); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 40px; }
+
+  .podium-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 20px;
+  }
+  .podium-slot { flex: 1; max-width: 320px; display: flex; flex-direction: column; align-items: center; }
+
+  .podium-card {
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 28px 20px 24px;
+    text-align: center;
     border: 1px solid #222;
-    transition: all 0.4s;
+    border-bottom: none;
+    transition: all 0.6s ease;
+    position: relative;
+  }
+  .podium-slot.p1 .podium-card { background: #1a0000; border-color: #dc2626; min-height: 340px; }
+  .podium-slot.p2 .podium-card { background: #111; min-height: 260px; }
+  .podium-slot.p3 .podium-card { background: #111; min-height: 200px; }
+
+  .podium-medal { font-size: 2.8rem; margin-bottom: 12px; }
+  .podium-name { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 4px; line-height: 1.2; }
+  .podium-slot.p1 .podium-name { font-size: 1.6rem; }
+  .podium-case { font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; }
+  .podium-score { font-size: 2.8rem; font-weight: 900; line-height: 1; }
+  .podium-slot.p1 .podium-score { font-size: 3.6rem; }
+  .podium-score-label { font-size: 0.7rem; color: rgba(255,255,255,0.35); letter-spacing: 1px; margin-top: 4px; }
+
+  .podium-dims { display: flex; justify-content: center; gap: 12px; margin-top: 16px; }
+  .podium-dim { text-align: center; }
+  .podium-dim-val { font-size: 1rem; font-weight: 700; }
+  .podium-dim-lbl { font-size: 0.6rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .podium-base {
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 24px;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.6);
+    border-radius: 0 0 12px 12px;
   }
-  .finalist-card.winner { border-color: #dc2626; background: rgba(220,38,38,0.08); }
-  .finalist-rank { font-size: 2rem; font-weight: 900; width: 50px; text-align: center; }
-  .finalist-info { flex: 1; }
-  .finalist-name { font-size: 1.4rem; font-weight: 700; }
-  .finalist-case { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
-  .finalist-votes { font-size: 2rem; font-weight: 800; min-width: 80px; text-align: right; }
-  .finalist-pct { font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: right; }
-  .vote-bar-bg { height: 6px; background: #222; border-radius: 3px; margin-top: 12px; overflow: hidden; }
-  .vote-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .podium-slot.p1 .podium-base { background: #dc2626; height: 56px; color: #fff; font-size: 1.5rem; }
+  .podium-slot.p2 .podium-base { background: #333; height: 44px; }
+  .podium-slot.p3 .podium-base { background: #222; height: 36px; }
+
+  .waiting-text { color: rgba(255,255,255,0.2); font-size: 0.85rem; font-style: italic; margin-top: 12px; }
+
   .total-votes-badge {
     text-align: center;
-    margin-top: 24px;
-    color: rgba(255,255,255,0.4);
+    margin-top: 32px;
+    color: rgba(255,255,255,0.35);
     font-size: 0.85rem;
+    letter-spacing: 1px;
   }
 
   .pulse { animation: pulse 2s infinite; }
@@ -171,9 +205,8 @@
 </div>
 
 <div id="phase2">
-  <h2>Grand Final</h2>
-  <p class="subtitle">The best of the best — live votes</p>
-  <div id="finalistsContainer"></div>
+  <p class="subtitle">GRAND FINAL — LIVE VOTES</p>
+  <div class="podium-wrap" id="podiumWrap"></div>
   <div class="total-votes-badge" id="totalVotesBadge"></div>
 </div>
 
@@ -222,24 +255,39 @@ function renderPhase1(rankings) {
 }
 
 function renderPhase2(rankings, total) {
-  const container = document.getElementById('finalistsContainer');
-  container.innerHTML = rankings.map((team, i) => `
-    <div class="finalist-card ${i === 0 && team.votes > 0 ? 'winner' : ''}">
-      <div class="finalist-rank">${i === 0 && team.votes > 0 ? '🏆' : i+1}</div>
-      <div class="finalist-info">
-        <div class="finalist-name">${team.name}</div>
-        <div class="finalist-case" style="color:${team.caseColor}">${team.caseName}</div>
-        <div class="vote-bar-bg">
-          <div class="vote-bar-fill" style="width:${team.pct}%; background:${team.caseColor}"></div>
-        </div>
+  // podium order: 2nd (left), 1st (centre), 3rd (right)
+  const slots = [
+    { pos: 'p2', rank: 2, medal: '🥈', team: rankings[1] },
+    { pos: 'p1', rank: 1, medal: '🥇', team: rankings[0] },
+    { pos: 'p3', rank: 3, medal: '🥉', team: rankings[2] }
+  ];
+
+  document.getElementById('podiumWrap').innerHTML = slots.map(({ pos, rank, medal, team }) => {
+    if (!team) return '';
+    const hasVotes = team.avg > 0;
+    const dims = hasVotes
+      ? `<div class="podium-dims">
+          ${['Innovation','Feasibility','Impact'].map(d => `
+            <div class="podium-dim">
+              <div class="podium-dim-val" style="color:${team.caseColor}">${team.dimAvg[d].toFixed(1)}</div>
+              <div class="podium-dim-lbl">${d.slice(0,3)}</div>
+            </div>`).join('')}
+        </div>` : `<div class="waiting-text">Waiting for votes...</div>`;
+
+    return `<div class="podium-slot ${pos}">
+      <div class="podium-card">
+        <div class="podium-medal">${medal}</div>
+        <div class="podium-name">${team.name}</div>
+        <div class="podium-case" style="color:${team.caseColor}">${team.caseName}</div>
+        <div class="podium-score" style="color:${team.caseColor}">${hasVotes ? team.avg.toFixed(1) : '—'}</div>
+        <div class="podium-score-label">avg score</div>
+        ${dims}
       </div>
-      <div>
-        <div class="finalist-votes" style="color:${team.caseColor}">${team.votes}</div>
-        <div class="finalist-pct">${team.pct}%</div>
-      </div>
-    </div>
-  `).join('');
-  document.getElementById('totalVotesBadge').textContent = `${total} vote${total !== 1 ? 's' : ''} cast`;
+      <div class="podium-base">${rank}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('totalVotesBadge').textContent = total > 0 ? `${total} participant${total !== 1 ? 's' : ''} voted` : 'Waiting for votes...';
 }
 </script>
 </body>
