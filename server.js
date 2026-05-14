@@ -19,8 +19,8 @@ const STATE = {
   phase: 1,
   businessCases: [
     { id: 'gc', name: 'Green Future', color: '#dc2626' },
-    { id: 'dl', name: 'Digital Leap', color: '#ffffff' },
-    { id: 'un', name: 'Urban Next', color: '#f87171' }
+    { id: 'dl', name: 'Digital Leap', color: '#b91c1c' },
+    { id: 'un', name: 'Urban Next', color: '#ef4444' }
   ],
   teams: [
     { id: 'greenies',   name: 'The Greenies',    caseId: 'gc' },
@@ -429,9 +429,35 @@ app.get('/vote', (req, res) => {
 
   const existingVotes = STATE.phase2votes[voterId] || {};
   const allVoted = finalists.every(f => existingVotes[f.id] && existingVotes[f.id].Innovation);
-  const flash = req.query.ok ? `<div style="background:#dcfce7;color:#15803d;padding:12px 20px;text-align:center;font-weight:600;font-size:0.9rem">${req.query.ok}</div>` : '';
 
-  const css = `*{margin:0;padding:0;box-sizing:border-box}body{background:#f8fafc;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:40px}header{background:#080c14;color:#fff;padding:20px;text-align:center}header h1{font-size:1.1rem;font-weight:700}header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:4px}.container{max-width:540px;margin:0 auto;padding:20px}.team-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);margin-bottom:28px;overflow:hidden}.team-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:3px solid #f1f5f9}.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}.team-name{font-size:1rem;font-weight:700;color:#1e293b}.team-case{font-size:0.75rem;margin-top:2px}.voted{margin-left:auto;background:#dcfce7;color:#16a34a;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:20px}.dims{padding:16px 20px}.dim{margin-bottom:20px}.dim-title{font-size:0.85rem;font-weight:700;color:#475569;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}.radio-row{display:flex;gap:8px}.radio-row input[type=radio]{display:none}.radio-row label{flex:1;height:50px;border-radius:10px;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all 0.1s}.radio-row input[type=radio]:checked+label{color:#fff;border-color:currentColor}.submit{display:block;width:100%;padding:16px;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;color:#fff;margin-top:8px;letter-spacing:0.5px;text-transform:uppercase}`;
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{background:#f8fafc;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:40px}header{background:#0a0a0a;color:#fff;padding:20px;text-align:center;border-bottom:3px solid #dc2626}header h1{font-size:1.1rem;font-weight:700}header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:4px}.container{max-width:540px;margin:0 auto;padding:20px}.confirm-banner{background:#0a0a0a;color:#fff;border-radius:16px;padding:24px 20px;margin-bottom:24px;text-align:center}.confirm-banner h2{font-size:1.2rem;font-weight:700;margin-bottom:4px}.confirm-banner p{font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:16px}.confirm-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #1a1a1a}.confirm-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.confirm-name{flex:1;font-size:0.9rem;font-weight:600;text-align:left}.confirm-scores{display:flex;gap:8px}.confirm-score{text-align:center;min-width:36px}.confirm-score-val{font-size:1rem;font-weight:800}.confirm-score-lbl{font-size:0.6rem;color:rgba(255,255,255,0.4);text-transform:uppercase}.edit-btn{display:block;width:100%;padding:12px;border:2px solid #dc2626;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;color:#dc2626;background:transparent;margin-top:16px;letter-spacing:0.5px;text-transform:uppercase}.team-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);margin-bottom:28px;overflow:hidden}.team-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:3px solid #f1f5f9}.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}.team-name{font-size:1rem;font-weight:700;color:#1e293b}.team-case{font-size:0.75rem;margin-top:2px}.voted{margin-left:auto;background:#fee2e2;color:#dc2626;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:20px}.dims{padding:16px 20px}.dim{margin-bottom:20px}.dim-title{font-size:0.85rem;font-weight:700;color:#475569;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}.radio-row{display:flex;gap:8px}.radio-row input[type=radio]{display:none}.radio-row label{flex:1;height:50px;border-radius:10px;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all 0.1s}.radio-row input[type=radio]:checked+label{color:#fff;border-color:currentColor}.submit{display:block;width:100%;padding:16px;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;margin-top:8px;letter-spacing:0.5px;text-transform:uppercase}`;
+
+  if (allVoted && req.query.ok) {
+    const confirmRows = finalists.map(team => {
+      const ex = existingVotes[team.id];
+      return `<div class="confirm-row">
+        <div class="confirm-dot" style="background:${team.caseColor}"></div>
+        <div class="confirm-name" style="color:#fff">${team.name}</div>
+        <div class="confirm-scores">
+          ${STATE.dimensions.map(d => `<div class="confirm-score"><div class="confirm-score-val" style="color:${team.caseColor}">${ex[d]}</div><div class="confirm-score-lbl">${d.slice(0,3)}</div></div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    return res.send(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grand Final Vote</title><style>${css}</style></head>
+<body>
+<header><h1>Grand Final</h1><p>Score all 3 finalists — Innovation, Feasibility, Impact</p></header>
+<div class="container">
+  <div class="confirm-banner">
+    <h2>Votes Saved!</h2>
+    <p>Your scores have been recorded</p>
+    ${confirmRows}
+    <form method="GET" action="/vote"><button class="edit-btn">Edit My Votes</button></form>
+  </div>
+</div></body></html>`);
+  }
 
   const teamsHtml = finalists.map(team => {
     const ex = existingVotes[team.id] || {};
@@ -459,11 +485,10 @@ app.get('/vote', (req, res) => {
 <title>Grand Final Vote</title><style>${css}</style></head>
 <body>
 <header><h1>Grand Final</h1><p>Score all 3 finalists — Innovation, Feasibility, Impact</p></header>
-${flash}
 <div class="container">
 <form method="POST" action="/vote">
 ${teamsHtml}
-<button class="submit" style="background:#0f172a;margin-top:8px">${allVoted ? 'Update Votes' : 'Submit All Votes'}</button>
+<button class="submit">${allVoted ? 'Update Votes' : 'Submit All Votes'}</button>
 </form>
 </div></body></html>`);
 });
