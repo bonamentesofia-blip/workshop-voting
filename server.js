@@ -218,7 +218,7 @@ app.post('/judge/:judgeId/vote/:teamId', express.urlencoded({ extended: false })
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
 app.get('/admin', async (req, res) => {
   const ip = getLocalIP();
-  const base = req.query.publicUrl || `http://${ip}:${PORT}`;
+  const base = req.query.publicUrl || process.env.PUBLIC_URL || `http://${ip}:${PORT}`;
 
   const qrImages = await Promise.all(STATE.judges.map(async j => {
     const url = `${base}/judge/${j.id}`;
