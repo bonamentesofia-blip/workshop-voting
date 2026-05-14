@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Judge Voting</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding-bottom: 40px; }
+  header { background: #080c14; color: #fff; padding: 20px; text-align: center; }
+  header h1 { font-size: 1.2rem; font-weight: 700; }
+  header p { color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 4px; }
+  .judge-badge { display: inline-block; margin-top: 8px; background: rgba(255,255,255,0.1); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+  .container { max-width: 560px; margin: 0 auto; padding: 20px; }
+
+  .team-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; overflow: hidden; }
+  .team-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f1f5f9; }
+  .team-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .team-title { flex: 1; }
+  .team-title h2 { font-size: 1rem; font-weight: 700; color: #1e293b; }
+  .team-title small { font-size: 0.75rem; }
+  .voted-badge { background: #dcfce7; color: #16a34a; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; }
+
+  .dimensions { padding: 16px 20px; }
+  .dimension { margin-bottom: 20px; }
+  .dim-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .dim-name { font-size: 0.85rem; font-weight: 600; color: #475569; }
+  .dim-val { font-size: 1.2rem; font-weight: 800; color: #1e293b; }
+  .stars { display: flex; gap: 6px; }
+  .star {
+    width: 44px; height: 44px; border-radius: 8px;
+    border: 2px solid #e2e8f0; background: #f8fafc;
+    cursor: pointer; font-size: 1rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: #94a3b8; transition: all 0.15s; user-select: none;
+  }
+  .star.on { color: #fff; }
+
+  .submit-btn {
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; margin-top: 8px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .submit-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+  .submit-btn.ready { color: #fff; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1e293b; color: #fff;
+    padding: 12px 24px; border-radius: 50px;
+    font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.3s; z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .msg { text-align: center; padding: 60px 20px; color: #64748b; }
+  .msg h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Workshop Challenge</h1>
+  <p>Judge Voting Panel</p>
+  <div class="judge-badge" id="judgeName">Loading...</div>
+</header>
+<div class="container" id="content">
+  <p style="text-align:center;padding:40px;color:#94a3b8">Loading...</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var judgeId = location.pathname.split('/').pop();
+var judgeData = null;
+var teamScores = {};
+
+function load() {
+  fetch('/api/judge/' + judgeId)
+    .then(function(res) {
+      if (!res.ok) throw new Error('Judge not found');
+      return res.json();
+    })
+    .then(function(data) {
+      judgeData = data;
+      document.getElementById('judgeName').textContent = data.judge.name;
+
+      if (data.phase === 2) {
+        document.getElementById('content').innerHTML =
+          '<div class="msg"><h2>Phase 1 is closed</h2><p>The final vote is now open.</p></div>';
+        return;
+      }
+
+      renderTeams();
+    })
+    .catch(function(err) {
+      document.getElementById('content').innerHTML =
+        '<div class="msg"><h2>Error</h2><p>' + err.message + '</p></div>';
+    });
+}
+
+function renderTeams() {
+  var content = document.getElementById('content');
+  content.innerHTML = '';
+
+  judgeData.teams.forEach(function(team) {
+    var existing = judgeData.existingVotes[team.id] || {};
+    teamScores[team.id] = {};
+    judgeData.dimensions.forEach(function(dim) {
+      teamScores[team.id][dim] = existing[dim] || 0;
+    });
+
+    var card = document.createElement('div');
+    card.className = 'team-card';
+    card.id = 'card-' + team.id;
+
+    // Header
+    var hdr = document.createElement('div');
+    hdr.className = 'team-header';
+    hdr.innerHTML =
+      '<div class="team-dot" style="background:' + team.caseColor + '"></div>' +
+      '<div class="team-title">' +
+        '<h2>' + team.name + '</h2>' +
+        '<small style="color:' + team.caseColor + '">' + team.caseName + '</small>' +
+      '</div>' +
+      (existing.Innovation ? '<div class="voted-badge">Voted</div>' : '');
+    card.appendChild(hdr);
+
+    // Dimensions
+    var dims = document.createElement('div');
+    dims.className = 'dimensions';
+
+    judgeData.dimensions.forEach(function(dim) {
+      var d = document.createElement('div');
+      d.className = 'dimension';
+
+      var lbl = document.createElement('div');
+      lbl.className = 'dim-label';
+      lbl.innerHTML =
+        '<span class="dim-name">' + dim + '</span>' +
+        '<span class="dim-val" id="val-' + team.id + '-' + dim + '">' +
+          (teamScores[team.id][dim] || '—') +
+        '</span>';
+      d.appendChild(lbl);
+
+      var starsRow = document.createElement('div');
+      starsRow.className = 'stars';
+
+      for (var n = 1; n <= 5; n++) {
+        var star = document.createElement('div');
+        star.className = 'star' + (teamScores[team.id][dim] >= n ? ' on' : '');
+        star.textContent = n;
+        star.style.borderColor = teamScores[team.id][dim] >= n ? team.caseColor : '#e2e8f0';
+        star.style.backgroundColor = teamScores[team.id][dim] >= n ? team.caseColor : '#f8fafc';
+        star.setAttribute('data-team', team.id);
+        star.setAttribute('data-dim', dim);
+        star.setAttribute('data-val', n);
+        star.setAttribute('data-color', team.caseColor);
+        star.addEventListener('click', onStarClick);
+        starsRow.appendChild(star);
+      }
+      d.appendChild(starsRow);
+      dims.appendChild(d);
+    });
+
+    // Submit button
+    var btn = document.createElement('button');
+    btn.className = 'submit-btn';
+    btn.id = 'btn-' + team.id;
+    btn.textContent = existing.Innovation ? 'Update Vote' : 'Submit Vote';
+    btn.setAttribute('data-team', team.id);
+    btn.setAttribute('data-color', team.caseColor);
+    updateButton(team.id, team.caseColor);
+    btn.addEventListener('click', onSubmit);
+    dims.appendChild(btn);
+
+    card.appendChild(dims);
+    content.appendChild(card);
+  });
+}
+
+function onStarClick() {
+  var teamId = this.getAttribute('data-team');
+  var dim = this.getAttribute('data-dim');
+  var val = parseInt(this.getAttribute('data-val'));
+  var color = this.getAttribute('data-color');
+
+  teamScores[teamId][dim] = val;
+
+  // Update stars in this row
+  var allStars = document.querySelectorAll('.star[data-team="' + teamId + '"][data-dim="' + dim + '"]');
+  allStars.forEach(function(s) {
+    var n = parseInt(s.getAttribute('data-val'));
+    var active = n <= val;
+    s.classList.toggle('on', active);
+    s.style.borderColor = active ? color : '#e2e8f0';
+    s.style.backgroundColor = active ? color : '#f8fafc';
+  });
+
+  // Update value label
+  var valEl = document.getElementById('val-' + teamId + '-' + dim);
+  if (valEl) valEl.textContent = val;
+
+  updateButton(teamId, color);
+}
+
+function updateButton(teamId, color) {
+  var btn = document.getElementById('btn-' + teamId);
+  if (!btn) return;
+  var scores = teamScores[teamId];
+  var allSet = Object.values(scores).every(function(v) { return v > 0; });
+  btn.disabled = !allSet;
+  if (allSet) {
+    btn.classList.add('ready');
+    btn.style.background = color;
+  } else {
+    btn.classList.remove('ready');
+    btn.style.background = '';
+  }
+}
+
+function onSubmit() {
+  var teamId = this.getAttribute('data-team');
+  var color = this.getAttribute('data-color');
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  fetch('/api/vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ judgeId: judgeId, teamId: teamId, scores: teamScores[teamId] })
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error('Failed');
+    btn.textContent = '✓ Voted!';
+    showToast('Vote saved!');
+    // mark header
+    var hdr = document.querySelector('#card-' + teamId + ' .team-header');
+    if (hdr && !hdr.querySelector('.voted-badge')) {
+      var badge = document.createElement('div');
+      badge.className = 'voted-badge';
+      badge.textContent = 'Voted';
+      hdr.appendChild(badge);
+    }
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.textContent = 'Update Vote';
+      btn.classList.add('ready');
+      btn.style.background = color;
+    }, 2000);
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Try Again';
+    btn.classList.add('ready');
+    btn.style.background = color;
+    showToast('Error — try again');
+  });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+load();
+</script>
+</body>
+</html>

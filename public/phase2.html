@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Final Vote</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #080c14;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+  p.sub { color: rgba(255,255,255,0.4); margin-top: 6px; font-size: 0.85rem; text-align: center; }
+  .voter-id {
+    margin-top: 12px;
+    background: rgba(255,255,255,0.08);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .teams { width: 100%; max-width: 480px; margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
+  .team-btn {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 24px 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    color: #fff;
+    width: 100%;
+  }
+  .team-btn:hover { background: rgba(255,255,255,0.08); transform: scale(1.01); }
+  .team-btn.selected { border-color: var(--c); background: rgba(255,255,255,0.08); }
+  .team-btn h2 { font-size: 1.2rem; font-weight: 700; }
+  .team-btn small { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+  .check { float: right; font-size: 1.5rem; opacity: 0; }
+  .team-btn.selected .check { opacity: 1; }
+
+  .confirm-btn {
+    margin-top: 32px;
+    padding: 16px 48px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #fff;
+    color: #080c14;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  .confirm-btn.active { opacity: 1; pointer-events: all; }
+  .confirm-btn.active:hover { transform: scale(1.04); }
+
+  .success {
+    text-align: center;
+    margin-top: 60px;
+  }
+  .success .icon { font-size: 4rem; }
+  .success h2 { font-size: 1.3rem; font-weight: 700; margin-top: 16px; }
+  .success p { color: rgba(255,255,255,0.4); margin-top: 8px; }
+
+  .error-msg { color: #f87171; text-align: center; margin-top: 16px; font-size: 0.85rem; }
+  .loading { color: rgba(255,255,255,0.4); margin-top: 40px; }
+</style>
+</head>
+<body>
+<h1>Grand Final</h1>
+<p class="sub">Vote for the best team</p>
+<div class="voter-id" id="voterLabel"></div>
+
+<div id="main">
+  <p class="loading">Loading...</p>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const voterId = params.get('id') || 'anonymous-' + Math.random().toString(36).slice(2,8);
+document.getElementById('voterLabel').textContent = 'Voter: ' + voterId;
+
+let selected = null;
+
+async function load() {
+  const res = await fetch('/api/state');
+  const data = await res.json();
+
+  if (data.phase !== 2 || data.winners.length === 0) {
+    document.getElementById('main').innerHTML = `
+      <p class="loading" style="margin-top:60px">Phase 2 has not started yet.<br>Check back soon!</p>`;
+    return;
+  }
+
+  const finalists = data.winners.map(id => {
+    const team = data.teams.find(t => t.id === id);
+    const bc = data.businessCases.find(b => b.id === team.caseId);
+    return { ...team, caseName: bc.name, caseColor: bc.color };
+  });
+
+  document.getElementById('main').innerHTML = `
+    <div class="teams" id="teamsContainer">
+      ${finalists.map(f => `
+        <button class="team-btn" id="btn-${f.id}" onclick="select('${f.id}')" style="--c:${f.caseColor}">
+          <span class="check">✓</span>
+          <h2>${f.name}</h2>
+          <small style="color:${f.caseColor}">${f.caseName}</small>
+        </button>
+      `).join('')}
+    </div>
+    <button class="confirm-btn" id="confirmBtn" onclick="submit()">Confirm Vote</button>
+    <div class="error-msg" id="errMsg"></div>
+  `;
+}
+
+function select(teamId) {
+  selected = teamId;
+  document.querySelectorAll('.team-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById(`btn-${teamId}`).classList.add('selected');
+  document.getElementById('confirmBtn').classList.add('active');
+}
+
+async function submit() {
+  if (!selected) return;
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = 'Submitting...';
+  btn.classList.remove('active');
+
+  const res = await fetch('/api/phase2vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voterId, teamId: selected })
+  });
+
+  if (res.ok) {
+    document.getElementById('main').innerHTML = `
+      <div class="success">
+        <div class="icon">🏆</div>
+        <h2>Vote submitted!</h2>
+        <p>Thank you for voting.</p>
+      </div>`;
+  } else {
+    btn.textContent = 'Confirm Vote';
+    btn.classList.add('active');
+    document.getElementById('errMsg').textContent = 'Something went wrong. Try again.';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Rankings</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #080c14;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    text-align: center;
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  header p { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 4px; letter-spacing: 1px; }
+  .phase-badge {
+    display: inline-block;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 8px;
+    background: rgba(255,255,255,0.1);
+  }
+
+  /* PHASE 1 */
+  #phase1 .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 24px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .case-column {
+    background: rgba(255,255,255,0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  .case-header {
+    padding: 16px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .team-card {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.3s;
+  }
+  .team-card.rank-1 { background: rgba(255,215,0,0.05); }
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .rank-num {
+    font-size: 1.1rem;
+    font-weight: 800;
+    width: 28px;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+  }
+  .rank-1 .rank-num { color: #fbbf24; }
+  .rank-2 .rank-num { color: #94a3b8; }
+  .rank-3 .rank-num { color: #cd7c2f; }
+  .team-name {
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+  }
+  .team-score {
+    font-size: 1.2rem;
+    font-weight: 800;
+    min-width: 40px;
+    text-align: right;
+  }
+  .score-bar-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    margin-left: 40px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+  .dims {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    margin-left: 40px;
+  }
+  .dim {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+  }
+  .dim span { color: rgba(255,255,255,0.7); font-weight: 600; }
+  .no-votes {
+    color: rgba(255,255,255,0.2);
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+
+  /* PHASE 2 */
+  #phase2 { display: none; padding: 40px 20px; max-width: 900px; margin: 0 auto; }
+  #phase2 h2 { text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase; }
+  #phase2 .subtitle { text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 40px; }
+  .finalist-card {
+    background: rgba(255,255,255,0.04);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.4s;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .finalist-card.winner { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.06); }
+  .finalist-rank { font-size: 2rem; font-weight: 900; width: 50px; text-align: center; }
+  .finalist-info { flex: 1; }
+  .finalist-name { font-size: 1.4rem; font-weight: 700; }
+  .finalist-case { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .finalist-votes { font-size: 2rem; font-weight: 800; min-width: 80px; text-align: right; }
+  .finalist-pct { font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: right; }
+  .vote-bar-bg { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+  .vote-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .total-votes-badge {
+    text-align: center;
+    margin-top: 24px;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85rem;
+  }
+
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity: 0.5; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Live Rankings</h1>
+  <p>WORKSHOP CHALLENGE 2026</p>
+  <div class="phase-badge" id="phaseBadge">Phase 1 — Semifinal</div>
+</header>
+
+<div id="phase1">
+  <div class="grid" id="rankingsGrid"></div>
+</div>
+
+<div id="phase2">
+  <h2>Grand Final</h2>
+  <p class="subtitle">The best of the best — live votes</p>
+  <div id="finalistsContainer"></div>
+  <div class="total-votes-badge" id="totalVotesBadge"></div>
+</div>
+
+<script>
+const socket = io();
+socket.on('update', render);
+
+function render(data) {
+  const { phase, rankings, phase2Rankings, totalPhase2Votes } = data;
+
+  document.getElementById('phase1').style.display = phase === 1 ? 'block' : 'none';
+  document.getElementById('phase2').style.display = phase === 2 ? 'block' : 'none';
+  document.getElementById('phaseBadge').textContent = phase === 1 ? 'Phase 1 — Semifinal' : 'Phase 2 — Grand Final';
+
+  if (phase === 1) renderPhase1(rankings);
+  else renderPhase2(phase2Rankings, totalPhase2Votes);
+}
+
+function renderPhase1(rankings) {
+  const grid = document.getElementById('rankingsGrid');
+  grid.innerHTML = rankings.map(bc => `
+    <div class="case-column">
+      <div class="case-header" style="color:${bc.color}; border-bottom: 3px solid ${bc.color}20">
+        ${bc.name}
+      </div>
+      ${bc.teams.map((team, i) => `
+        <div class="team-card rank-${i+1}">
+          <div class="team-row">
+            <div class="rank-num">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i+1}</div>
+            <div class="team-name">${team.name}</div>
+            <div class="team-score" style="color:${bc.color}">${team.avg > 0 ? team.avg.toFixed(1) : '—'}</div>
+          </div>
+          ${team.avg > 0 ? `
+          <div class="score-bar-bg">
+            <div class="score-bar-fill" style="width:${(team.avg/15*100)}%; background:${bc.color}"></div>
+          </div>
+          <div class="dims">
+            <div class="dim">Innovation <span>${team.dimAvg.Innovation.toFixed(1)}</span></div>
+            <div class="dim">Feasibility <span>${team.dimAvg.Feasibility.toFixed(1)}</span></div>
+            <div class="dim">Impact <span>${team.dimAvg.Impact.toFixed(1)}</span></div>
+          </div>` : `<div class="dims"><span class="no-votes">Waiting for votes...</span></div>`}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function renderPhase2(rankings, total) {
+  const container = document.getElementById('finalistsContainer');
+  container.innerHTML = rankings.map((team, i) => `
+    <div class="finalist-card ${i === 0 && team.votes > 0 ? 'winner' : ''}">
+      <div class="finalist-rank">${i === 0 && team.votes > 0 ? '🏆' : i+1}</div>
+      <div class="finalist-info">
+        <div class="finalist-name">${team.name}</div>
+        <div class="finalist-case" style="color:${team.caseColor}">${team.caseName}</div>
+        <div class="vote-bar-bg">
+          <div class="vote-bar-fill" style="width:${team.pct}%; background:${team.caseColor}"></div>
+        </div>
+      </div>
+      <div>
+        <div class="finalist-votes" style="color:${team.caseColor}">${team.votes}</div>
+        <div class="finalist-pct">${team.pct}%</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('totalVotesBadge').textContent = `${total} vote${total !== 1 ? 's' : ''} cast`;
+}
+</script>
+</body>
+</html>

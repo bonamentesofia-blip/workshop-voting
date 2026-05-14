@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Workshop Voting</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; }
+  h1 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+  .sub { color: #64748b; font-size: 0.85rem; margin-bottom: 28px; }
+
+  .section { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .section h2 { font-size: 0.9rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+
+  .phase-controls { display: flex; gap: 12px; flex-wrap: wrap; }
+  .phase-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    background: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #475569;
+  }
+  .phase-btn:hover { border-color: #94a3b8; }
+  .phase-btn.active { background: #0f172a; border-color: #0f172a; color: #fff; }
+  .phase-btn.danger { border-color: #fca5a5; color: #dc2626; }
+  .phase-btn.danger:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+
+  .judges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .judge-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
+  .judge-card h3 { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .judge-link { font-size: 0.75rem; color: #3b82f6; word-break: break-all; margin-bottom: 12px; }
+  .judge-teams { font-size: 0.75rem; color: #64748b; margin-bottom: 12px; line-height: 1.6; }
+  .qr-container { display: flex; justify-content: center; }
+
+  .winners-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .winner-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .winner-card h3 { font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .winner-card small { font-size: 0.7rem; color: #64748b; }
+  .winner-card.selected { border-color: #22c55e; background: #f0fdf4; }
+
+  select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .save-btn {
+    padding: 10px 24px;
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+
+  .status-bar {
+    background: #0f172a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .stat { }
+  .stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+  .stat-val { font-size: 1.4rem; font-weight: 800; }
+
+  .vote-progress { margin-top: 16px; }
+  .vote-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.8rem; }
+  .vote-label { width: 140px; color: #475569; }
+  .vote-bar-bg { flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .vote-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .vote-count { width: 40px; text-align: right; color: #94a3b8; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Admin Panel</h1>
+<p class="sub">Workshop Voting — Control Center</p>
+<div id="networkInfo" style="background:#dbeafe;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:0.8rem;color:#1e40af;display:none">
+  📡 Network URL: <strong id="networkUrl"></strong> — share this with judges on the same WiFi
+</div>
+
+<div class="status-bar" id="statusBar">
+  <div class="stat"><div class="stat-label">Phase</div><div class="stat-val" id="statPhase">—</div></div>
+  <div class="stat"><div class="stat-label">Votes Cast</div><div class="stat-val" id="statVotes">—</div></div>
+  <div class="stat"><div class="stat-label">Phase 2 Votes</div><div class="stat-val" id="statP2Votes">—</div></div>
+</div>
+
+<div class="section">
+  <h2>Phase Control</h2>
+  <div class="phase-controls">
+    <button class="phase-btn" id="btnP1" onclick="setPhase(1)">Phase 1 — Semifinal</button>
+    <button class="phase-btn" id="btnP2" onclick="setPhase(2)">Phase 2 — Grand Final</button>
+    <button class="phase-btn danger" onclick="resetAll()">Reset Everything</button>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Set Phase 2 Finalists</h2>
+  <p style="font-size:0.8rem;color:#64748b;margin-bottom:16px">Select one winner per business case</p>
+  <div id="winnersContainer"></div>
+  <button class="save-btn" onclick="saveWinners()">Save Finalists</button>
+</div>
+
+<div class="section">
+  <h2>Vote Progress (Phase 1)</h2>
+  <div id="voteProgress"></div>
+</div>
+
+<div class="section">
+  <h2>Judge Links & QR Codes</h2>
+  <div class="judges-grid" id="judgesGrid"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let state = null;
+let selectedWinners = {};
+
+socket.on('update', data => {
+  state = data;
+  updateStatus(data);
+  updateProgress(data);
+});
+
+async function load() {
+  const [stateRes, ipRes] = await Promise.all([fetch('/api/state'), fetch('/api/localip')]);
+  state = await stateRes.json();
+  const { ip, port } = await ipRes.json();
+  state._baseUrl = `http://${ip}:${port}`;
+  document.getElementById('networkUrl').textContent = `http://${ip}:${port}`;
+  document.getElementById('networkInfo').style.display = 'block';
+  renderJudges(state);
+  renderWinnersSelector(state);
+  updateStatus(state);
+  updateProgress(state);
+}
+
+function updateStatus(data) {
+  document.getElementById('statPhase').textContent = data.phase;
+  document.getElementById('statVotes').textContent = data.rankings
+    ? data.rankings.reduce((acc, bc) => acc + bc.teams.reduce((a,t)=>a+t.voteCount,0),0)
+    : '—';
+  document.getElementById('statP2Votes').textContent = data.totalPhase2Votes || 0;
+  document.getElementById('btnP1').classList.toggle('active', data.phase === 1);
+  document.getElementById('btnP2').classList.toggle('active', data.phase === 2);
+}
+
+function updateProgress(data) {
+  if (!data.rankings) return;
+  const container = document.getElementById('voteProgress');
+  const judges = 2; // judges per group
+  container.innerHTML = data.rankings.map(bc => `
+    <div style="margin-bottom:16px">
+      <div style="font-size:0.75rem;font-weight:700;color:${bc.color};margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${bc.name}</div>
+      ${bc.teams.map(t => `
+        <div class="vote-row">
+          <div class="vote-label">${t.name}</div>
+          <div class="vote-bar-bg">
+            <div class="vote-bar-fill" style="width:${(t.voteCount/judges)*100}%;background:${bc.color}"></div>
+          </div>
+          <div class="vote-count">${t.voteCount}/${judges}</div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function renderJudges(data) {
+  const grid = document.getElementById('judgesGrid');
+  const base = data._baseUrl || location.origin;
+  grid.innerHTML = data.judges.map(j => {
+    const url = `${base}/judge/${j.id}`;
+    const teams = j.assignedTeams.map(tid => data.teams.find(t=>t.id===tid)?.name).join(', ');
+    return `
+      <div class="judge-card">
+        <h3>${j.name}</h3>
+        <div class="judge-link">${url}</div>
+        <div class="judge-teams">Teams: ${teams}</div>
+        <div class="qr-container">
+          <img src="/api/qr/${j.id}" width="160" height="160" alt="QR ${j.name}" style="border-radius:8px">
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderWinnersSelector(data) {
+  const container = document.getElementById('winnersContainer');
+  container.innerHTML = data.businessCases.map(bc => {
+    const bcTeams = data.teams.filter(t => t.caseId === bc.id);
+    return `
+      <div style="margin-bottom:16px">
+        <div style="font-size:0.75rem;font-weight:700;color:${bc.color};margin-bottom:6px;text-transform:uppercase">${bc.name}</div>
+        <select id="winner-${bc.id}" onchange="selectedWinners['${bc.id}']=this.value">
+          <option value="">Select winner...</option>
+          ${bcTeams.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  }).join('');
+
+  if (data.winners?.length) {
+    data.winners.forEach(tid => {
+      const team = data.teams.find(t => t.id === tid);
+      if (team) {
+        const sel = document.getElementById(`winner-${team.caseId}`);
+        if (sel) { sel.value = tid; selectedWinners[team.caseId] = tid; }
+      }
+    });
+  }
+}
+
+async function setPhase(p) {
+  await fetch('/api/admin/phase', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ phase: p })
+  });
+}
+
+async function saveWinners() {
+  const winners = Object.values(selectedWinners).filter(Boolean);
+  if (winners.length === 0) { alert('Select at least one finalist'); return; }
+  await fetch('/api/admin/winners', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ winners })
+  });
+  alert('Finalists saved!');
+}
+
+async function resetAll() {
+  if (!confirm('Reset all votes and return to Phase 1?')) return;
+  await fetch('/api/admin/reset', { method: 'POST' });
+  selectedWinners = {};
+  load();
+}
+
+load();
+</script>
+</body>
+</html>
