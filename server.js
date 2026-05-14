@@ -18,9 +18,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const STATE = {
   phase: 1,
   businessCases: [
-    { id: 'gc', name: 'Green Future', color: '#22c55e' },
-    { id: 'dl', name: 'Digital Leap', color: '#3b82f6' },
-    { id: 'un', name: 'Urban Next', color: '#f59e0b' }
+    { id: 'gc', name: 'Green Future', color: '#dc2626' },
+    { id: 'dl', name: 'Digital Leap', color: '#ffffff' },
+    { id: 'un', name: 'Urban Next', color: '#f87171' }
   ],
   teams: [
     { id: 'greenies',   name: 'The Greenies',    caseId: 'gc' },

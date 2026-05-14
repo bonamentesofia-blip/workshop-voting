@@ -8,7 +8,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #080c14;
+    background: #000;
     color: #fff;
     font-family: 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh;
@@ -17,7 +17,7 @@
   header {
     text-align: center;
     padding: 24px 20px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 2px solid #dc2626;
   }
   header h1 {
     font-size: 2rem;
@@ -26,7 +26,7 @@
     text-transform: uppercase;
     color: #fff;
   }
-  header p { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 4px; letter-spacing: 1px; }
+  header p { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 4px; letter-spacing: 1px; }
   .phase-badge {
     display: inline-block;
     padding: 4px 16px;
@@ -36,7 +36,8 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     margin-top: 8px;
-    background: rgba(255,255,255,0.1);
+    background: #dc2626;
+    color: #fff;
   }
 
   /* PHASE 1 */
@@ -49,9 +50,9 @@
     margin: 0 auto;
   }
   .case-column {
-    background: rgba(255,255,255,0.03);
+    background: #111;
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid #222;
     overflow: hidden;
   }
   .case-header {
@@ -63,10 +64,10 @@
   }
   .team-card {
     padding: 14px 20px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid #1a1a1a;
     transition: background 0.3s;
   }
-  .team-card.rank-1 { background: rgba(255,215,0,0.05); }
+  .team-card.rank-1 { background: rgba(220,38,38,0.08); }
   .team-row {
     display: flex;
     align-items: center;
@@ -78,11 +79,11 @@
     font-weight: 800;
     width: 28px;
     text-align: center;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.25);
   }
-  .rank-1 .rank-num { color: #fbbf24; }
-  .rank-2 .rank-num { color: #94a3b8; }
-  .rank-3 .rank-num { color: #cd7c2f; }
+  .rank-1 .rank-num { color: #dc2626; }
+  .rank-2 .rank-num { color: rgba(255,255,255,0.6); }
+  .rank-3 .rank-num { color: rgba(255,255,255,0.35); }
   .team-name {
     font-size: 1rem;
     font-weight: 600;
@@ -96,7 +97,7 @@
   }
   .score-bar-bg {
     height: 4px;
-    background: rgba(255,255,255,0.08);
+    background: #222;
     border-radius: 2px;
     margin-left: 40px;
     overflow: hidden;
@@ -114,7 +115,7 @@
   }
   .dim {
     font-size: 0.7rem;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.35);
   }
   .dim span { color: rgba(255,255,255,0.7); font-weight: 600; }
   .no-votes {
@@ -128,24 +129,24 @@
   #phase2 h2 { text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase; }
   #phase2 .subtitle { text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 40px; }
   .finalist-card {
-    background: rgba(255,255,255,0.04);
+    background: #111;
     border-radius: 20px;
     padding: 28px 32px;
     margin-bottom: 16px;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid #222;
     transition: all 0.4s;
     display: flex;
     align-items: center;
     gap: 24px;
   }
-  .finalist-card.winner { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.06); }
+  .finalist-card.winner { border-color: #dc2626; background: rgba(220,38,38,0.08); }
   .finalist-rank { font-size: 2rem; font-weight: 900; width: 50px; text-align: center; }
   .finalist-info { flex: 1; }
   .finalist-name { font-size: 1.4rem; font-weight: 700; }
   .finalist-case { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
   .finalist-votes { font-size: 2rem; font-weight: 800; min-width: 80px; text-align: right; }
   .finalist-pct { font-size: 0.8rem; color: rgba(255,255,255,0.4); text-align: right; }
-  .vote-bar-bg { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+  .vote-bar-bg { height: 6px; background: #222; border-radius: 3px; margin-top: 12px; overflow: hidden; }
   .vote-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
   .total-votes-badge {
     text-align: center;
