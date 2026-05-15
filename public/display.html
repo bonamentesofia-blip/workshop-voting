@@ -241,12 +241,10 @@ function renderPhase1(rankings) {
           </div>
           ${team.avg > 0 ? `
           <div class="score-bar-bg">
-            <div class="score-bar-fill" style="width:${(team.avg/15*100)}%; background:${bc.color}"></div>
+            <div class="score-bar-fill" style="width:${(team.avg/16*100)}%; background:${bc.color}"></div>
           </div>
           <div class="dims">
-            <div class="dim">Innovation <span>${team.dimAvg.Innovation.toFixed(1)}</span></div>
-            <div class="dim">Feasibility <span>${team.dimAvg.Feasibility.toFixed(1)}</span></div>
-            <div class="dim">Impact <span>${team.dimAvg.Impact.toFixed(1)}</span></div>
+            ${Object.entries(team.dimAvg).map(([k,v]) => `<div class="dim">${k} <span>${v.toFixed(1)}</span></div>`).join('')}
           </div>` : `<div class="dims"><span class="no-votes">Waiting for votes...</span></div>`}
         </div>
       `).join('')}
@@ -267,9 +265,9 @@ function renderPhase2(rankings, total) {
     const hasVotes = team.avg > 0;
     const dims = hasVotes
       ? `<div class="podium-dims">
-          ${['Innovation','Feasibility','Impact'].map(d => `
+          ${Object.entries(team.dimAvg).map(([d,v]) => `
             <div class="podium-dim">
-              <div class="podium-dim-val" style="color:${team.caseColor}">${team.dimAvg[d].toFixed(1)}</div>
+              <div class="podium-dim-val" style="color:${team.caseColor}">${v.toFixed(1)}</div>
               <div class="podium-dim-lbl">${d.slice(0,3)}</div>
             </div>`).join('')}
         </div>` : `<div class="waiting-text">Waiting for votes...</div>`;
