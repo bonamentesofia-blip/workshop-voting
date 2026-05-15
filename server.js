@@ -250,7 +250,7 @@ body{background:#0a0e1a;font-family:'Segoe UI',system-ui,sans-serif;min-height:1
 header{background:#080c14;padding:24px 20px;text-align:center;border-bottom:2px solid #1e293b}
 header h1{font-size:1.4rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}
 header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:6px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1200px;margin:28px auto;padding:0 20px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1600px;margin:28px auto;padding:0 20px}
 .dim-card{background:#111827;border-radius:18px;overflow:hidden;border:1px solid #1e293b}
 .dim-header{padding:14px 20px;text-align:center;font-size:0.75rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;background:#0f172a}
 .winner-block{padding:20px;text-align:center;border-bottom:1px solid #1e293b}
