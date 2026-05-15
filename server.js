@@ -137,18 +137,21 @@ header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:4px}
 .radio-row input[type=radio]{display:none}
 .radio-row label{flex:1;height:50px;border-radius:10px;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all 0.1s}
 .radio-row input[type=radio]:checked + label{color:#fff;border-color:currentColor}
-.submit{display:block;width:100%;padding:16px;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;color:#fff;margin-top:8px;letter-spacing:0.5px;text-transform:uppercase}`;
+.submit{display:block;width:100%;padding:16px;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;color:#fff;margin-top:8px;letter-spacing:0.5px;text-transform:uppercase}
+.score-desc{display:flex;gap:8px;margin-top:6px}
+.score-desc span{flex:1;font-size:0.65rem;color:#475569;text-align:center;line-height:1.3;background:#f1f5f9;border-radius:4px;padding:4px 2px}`;
 
   const teamsHtml = teams.map(team => {
     const ex = existingVotes[team.id] || {};
     const voted = STATE.dimensions.every(d => ex[d]);
     const dimsHtml = STATE.dimensions.map(dim => {
       const cur = ex[dim] || 0;
-      const radios = [1,2,3,4,5].map(n =>
+      const radios = [1,2,3,4].map(n =>
         `<input type="radio" name="${dim}" id="r-${team.id}-${dim}-${n}" value="${n}"${cur===n?' checked':''}>`+
         `<label for="r-${team.id}-${dim}-${n}" style="color:${team.caseColor}">${n}</label>`
       ).join('');
-      return `<div class="dim"><div class="dim-title">${dim}</div><div class="radio-row">${radios}</div></div>`;
+      const descHtml = '<div class="score-desc"><span>1<br>Not met</span><span>2<br>Met</span><span>3<br>Above expectation</span><span>4<br>Exceed expectations</span></div>';
+      return `<div class="dim"><div class="dim-title">${dim}</div><div class="radio-row">${radios}</div>${descHtml}</div>`;
     }).join('');
 
     return `<div class="team-card">
