@@ -58,6 +58,8 @@
 
   .msg { text-align: center; padding: 60px 20px; color: #64748b; }
   .msg h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 8px; }
+  .score-labels { display: flex; justify-content: space-between; margin-top: 6px; }
+  .score-labels span { font-size: 0.65rem; color: #94a3b8; text-align: center; width: 44px; line-height: 1.2; }
 </style>
 </head>
 <body>
@@ -124,7 +126,7 @@ function renderTeams() {
         '<h2>' + team.name + '</h2>' +
         '<small style="color:' + team.caseColor + '">' + team.caseName + '</small>' +
       '</div>' +
-      (existing.Innovation ? '<div class="voted-badge">Voted</div>' : '');
+      (judgeData.dimensions.some(function(d) { return existing[d]; }) ? '<div class="voted-badge">Voted</div>' : '');
     card.appendChild(hdr);
 
     // Dimensions
@@ -147,7 +149,7 @@ function renderTeams() {
       var starsRow = document.createElement('div');
       starsRow.className = 'stars';
 
-      for (var n = 1; n <= 5; n++) {
+      for (var n = 1; n <= 4; n++) {
         var star = document.createElement('div');
         star.className = 'star' + (teamScores[team.id][dim] >= n ? ' on' : '');
         star.textContent = n;
@@ -161,6 +163,14 @@ function renderTeams() {
         starsRow.appendChild(star);
       }
       d.appendChild(starsRow);
+      var scoreLabels = document.createElement('div');
+      scoreLabels.className = 'score-labels';
+      scoreLabels.innerHTML =
+        '<span>1<br>Not met</span>' +
+        '<span>2<br>Met</span>' +
+        '<span>3<br>Above expectation</span>' +
+        '<span>4<br>Exceed the expectations</span>';
+      d.appendChild(scoreLabels);
       dims.appendChild(d);
     });
 
