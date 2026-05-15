@@ -220,7 +220,6 @@ app.post('/judge/:judgeId/vote/:teamId', express.urlencoded({ extended: false })
 });
 
 app.get('/bestinclass', (req, res) => {
-  // Compute per-dimension average for every team using Phase 1 votes
   const teamScores = STATE.teams.map(team => {
     const bc = STATE.businessCases.find(b => b.id === team.caseId);
     const dimTotals = {};
@@ -228,17 +227,13 @@ app.get('/bestinclass', (req, res) => {
     STATE.dimensions.forEach(d => { dimTotals[d] = 0; });
     STATE.judges.forEach(judge => {
       const v = STATE.votes[`${judge.id}_${team.id}`];
-      if (v) {
-        STATE.dimensions.forEach(d => { dimTotals[d] += v[d] || 0; });
-        count++;
-      }
+      if (v) { STATE.dimensions.forEach(d => { dimTotals[d] += v[d] || 0; }); count++; }
     });
     const dimAvg = {};
     STATE.dimensions.forEach(d => { dimAvg[d] = count ? +(dimTotals[d] / count).toFixed(2) : 0; });
     return { ...team, caseName: bc.name, caseColor: bc.color, dimAvg, voteCount: count };
   });
 
-  // For each dimension find the winner (highest avg)
   const bestByDim = STATE.dimensions.map(dim => {
     const sorted = [...teamScores].sort((a, b) => b.dimAvg[dim] - a.dimAvg[dim]);
     return { dim, teams: sorted };
@@ -246,66 +241,68 @@ app.get('/bestinclass', (req, res) => {
 
   const css = `
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0e1a;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:40px;color:#fff}
-header{background:#080c14;padding:24px 20px;text-align:center;border-bottom:2px solid #1e293b}
-header h1{font-size:1.4rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}
-header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:6px}
-.grid{display:flex;flex-wrap:nowrap;gap:16px;padding:20px;align-items:flex-start}.dim-card{flex:1;min-width:0}
-.dim-card{background:#111827;border-radius:18px;overflow:hidden;border:1px solid #1e293b}
-.dim-header{padding:14px 20px;text-align:center;font-size:0.75rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;background:#0f172a}
-.winner-block{padding:20px;text-align:center;border-bottom:1px solid #1e293b}
-.winner-label{font-size:0.65rem;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:8px}
-.winner-trophy{font-size:2rem;margin-bottom:6px}
-.winner-name{font-size:1.15rem;font-weight:800;margin-bottom:2px}
-.winner-case{font-size:0.72rem;color:rgba(255,255,255,0.45);margin-bottom:10px}
-.winner-score{font-size:2.8rem;font-weight:900;line-height:1}
-.winner-score span{font-size:0.9rem;font-weight:500;color:rgba(255,255,255,0.4)}
-.team-list{padding:12px 16px}
-.team-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2234}
-.team-row:last-child{border-bottom:none}
-.rank{font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.3);width:18px;text-align:center;flex-shrink:0}
-.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.tname{flex:1;font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.85)}
-.tcase{font-size:0.65rem;color:rgba(255,255,255,0.35)}
-.score-bar-wrap{width:80px;flex-shrink:0}
-.score-bar-bg{background:#1e293b;border-radius:4px;height:6px;overflow:hidden}
-.score-bar-fill{height:6px;border-radius:4px}
-.score-val{font-size:0.78rem;font-weight:700;text-align:right;margin-top:3px}
-.no-votes{padding:20px;text-align:center;color:rgba(255,255,255,0.3);font-size:0.85rem}
+body{background:#000;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+header{text-align:center;padding:24px 20px 16px;border-bottom:2px solid #dc2626}
+header h1{font-size:2rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fff}
+header p{color:rgba(255,255,255,0.5);font-size:0.85rem;margin-top:4px;letter-spacing:1px}
+.phase-badge{display:inline-block;padding:4px 16px;border-radius:20px;font-size:0.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:8px;background:#dc2626;color:#fff}
+.grid{display:flex;flex-wrap:nowrap;gap:20px;padding:24px 20px;max-width:1600px;margin:0 auto}
+.dim-card{flex:1;min-width:0;background:#111;border-radius:16px;border:1px solid #222;overflow:hidden}
+.dim-header{padding:16px 20px;font-weight:700;font-size:0.9rem;letter-spacing:1px;text-transform:uppercase;color:#dc2626;border-bottom:3px solid #dc262622}
+.winner-block{padding:16px 20px;background:rgba(220,38,38,0.08);border-bottom:1px solid #1a1a1a}
+.winner-label{font-size:0.62rem;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:6px}
+.winner-trophy{font-size:1.6rem;margin-bottom:4px}
+.winner-name{font-size:1.05rem;font-weight:800;margin-bottom:2px}
+.winner-case{font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:10px}
+.winner-score{font-size:2.6rem;font-weight:900;line-height:1}
+.winner-score span{font-size:0.85rem;font-weight:500;color:rgba(255,255,255,0.35)}
+.team-card{padding:12px 20px;border-top:1px solid #1a1a1a;transition:background 0.3s}
+.team-card.rank-1{background:rgba(220,38,38,0.08)}
+.team-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.rank-num{font-size:1rem;font-weight:800;width:26px;text-align:center;color:rgba(255,255,255,0.25)}
+.rank-1 .rank-num{color:#dc2626}
+.rank-2 .rank-num{color:rgba(255,255,255,0.6)}
+.rank-3 .rank-num{color:rgba(255,255,255,0.35)}
+.team-name{font-size:0.9rem;font-weight:600;flex:1}
+.team-score{font-size:1.1rem;font-weight:800;min-width:36px;text-align:right}
+.score-bar-bg{height:4px;background:#222;border-radius:2px;margin-left:36px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+.team-case{font-size:0.65rem;color:rgba(255,255,255,0.3);margin-top:3px;margin-left:36px}
+.no-votes{color:rgba(255,255,255,0.2);font-size:0.8rem;font-style:italic;padding:16px 20px}
 `;
 
   const cardsHtml = bestByDim.map(({ dim, teams }) => {
     const winner = teams[0];
     const hasVotes = winner.voteCount > 0;
-    const winnerHtml = hasVotes ? `
-      <div class="winner-block">
-        <div class="winner-label">Best in Class</div>
-        <div class="winner-trophy">🏆</div>
-        <div class="winner-name" style="color:${winner.caseColor}">${winner.name}</div>
-        <div class="winner-case">${winner.caseName}</div>
-        <div class="winner-score" style="color:${winner.caseColor}">${winner.dimAvg[dim].toFixed(1)}<span> / 4</span></div>
-      </div>` : '<div class="no-votes">No votes yet</div>';
+
+    const winnerHtml = hasVotes
+      ? `<div class="winner-block">
+          <div class="winner-label">🏆 Best in Class</div>
+          <div class="winner-name" style="color:${winner.caseColor}">${winner.name}</div>
+          <div class="winner-case">${winner.caseName}</div>
+          <div class="winner-score" style="color:${winner.caseColor}">${winner.dimAvg[dim].toFixed(1)}<span> / 4</span></div>
+        </div>`
+      : '<div class="no-votes">No votes yet</div>';
 
     const rowsHtml = teams.map((t, i) => {
       const pct = (t.dimAvg[dim] / 4) * 100;
-      return `<div class="team-row">
-        <span class="rank">${i + 1}</span>
-        <div class="dot" style="background:${t.caseColor}"></div>
-        <div style="flex:1;min-width:0">
-          <div class="tname">${t.name}</div>
-          <div class="tcase">${t.caseName}</div>
+      const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
+      return `<div class="team-card ${rankClass}">
+        <div class="team-row">
+          <div class="rank-num">${medal}</div>
+          <div class="team-name">${t.name}</div>
+          <div class="team-score" style="color:${t.caseColor}">${t.voteCount ? t.dimAvg[dim].toFixed(1) : '—'}</div>
         </div>
-        <div class="score-bar-wrap">
-          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${t.caseColor}"></div></div>
-          <div class="score-val" style="color:${t.caseColor}">${t.voteCount ? t.dimAvg[dim].toFixed(1) : '—'}</div>
-        </div>
+        ${t.voteCount ? `<div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${t.caseColor}"></div></div>` : ''}
+        <div class="team-case">${t.caseName}</div>
       </div>`;
     }).join('');
 
     return `<div class="dim-card">
-      <div class="dim-header" style="color:${winner.caseColor || '#94a3b8'}">${dim}</div>
+      <div class="dim-header">${dim}</div>
       ${winnerHtml}
-      <div class="team-list">${rowsHtml}</div>
+      ${rowsHtml}
     </div>`;
   }).join('');
 
@@ -320,13 +317,15 @@ header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:6px}
 <body>
 <header>
   <h1>Best in Class</h1>
-  <p>Phase 1 — Top scorer per category</p>
+  <p>WORKSHOP CHALLENGE 2026</p>
+  <div class="phase-badge">Phase 1 — Category Winners</div>
 </header>
 <div class="grid">${cardsHtml}</div>
 <script>setTimeout(()=>location.reload(),30000)</script>
 </body>
 </html>`);
 });
+
 
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
 app.get('/admin', async (req, res) => {
