@@ -44,7 +44,7 @@ const STATE = {
     { id: 'j5', name: 'Elena Ferrari', assignedTeams: ['team9','team10','team11','team12'] },
     { id: 'j6', name: 'Franco Gallo',  assignedTeams: ['team9','team10','team11','team12'] }
   ],
-  dimensions: ['Innovation', 'Feasibility', 'Impact'],
+  dimensions: ['Creativity', 'Feasibility', 'Effectiveness', 'Collaboration'],
   votes: {},
   phase2votes: {},
   winners: []
@@ -55,22 +55,21 @@ function computeRankings() {
     const bcTeams = STATE.teams.filter(t => t.caseId === bc.id);
     const ranked = bcTeams.map(team => {
       let total = 0, count = 0;
-      const dimTotals = { Innovation: 0, Feasibility: 0, Impact: 0 };
+      const dimTotals = {};
+      STATE.dimensions.forEach(d => { dimTotals[d] = 0; });
       STATE.judges.forEach(judge => {
         const key = `${judge.id}_${team.id}`;
         if (STATE.votes[key]) {
           const v = STATE.votes[key];
-          dimTotals.Innovation += v.Innovation;
-          dimTotals.Feasibility += v.Feasibility;
-          dimTotals.Impact += v.Impact;
-          total += v.Innovation + v.Feasibility + v.Impact;
+          STATE.dimensions.forEach(d => { dimTotals[d] += v[d] || 0; });
+          total += STATE.dimensions.reduce((sum, d) => sum + (v[d] || 0), 0);
           count++;
         }
       });
       const avg = count > 0 ? total / count : 0;
       const dimAvg = count > 0
-        ? { Innovation: dimTotals.Innovation/count, Feasibility: dimTotals.Feasibility/count, Impact: dimTotals.Impact/count }
-        : { Innovation: 0, Feasibility: 0, Impact: 0 };
+        ? Object.fromEntries(STATE.dimensions.map(d => [d, dimTotals[d]/count]))
+        : Object.fromEntries(STATE.dimensions.map(d => [d, 0]));
       return { ...team, avg, dimAvg, voteCount: count };
     });
     ranked.sort((a, b) => b.avg - a.avg);
@@ -79,33 +78,32 @@ function computeRankings() {
 }
 
 function computePhase2Rankings() {
-  // phase2votes[voterId][teamId] = { Innovation, Feasibility, Impact }
+  // phase2votes[voterId][teamId] = { Creativity, Feasibility, Effectiveness, Collaboration }
   return STATE.winners.map(id => {
     const team = STATE.teams.find(t => t.id === id);
     const bc = STATE.businessCases.find(b => b.id === team.caseId);
     let total = 0, count = 0;
-    const dimTotals = { Innovation: 0, Feasibility: 0, Impact: 0 };
+    const dimTotals = {};
+    STATE.dimensions.forEach(d => { dimTotals[d] = 0; });
     Object.values(STATE.phase2votes).forEach(voterScores => {
       if (voterScores[id]) {
         const s = voterScores[id];
-        dimTotals.Innovation += s.Innovation || 0;
-        dimTotals.Feasibility += s.Feasibility || 0;
-        dimTotals.Impact += s.Impact || 0;
-        total += (s.Innovation || 0) + (s.Feasibility || 0) + (s.Impact || 0);
+        STATE.dimensions.forEach(d => { dimTotals[d] += s[d] || 0; });
+        total += STATE.dimensions.reduce((sum, d) => sum + (s[d] || 0), 0);
         count++;
       }
     });
     const avg = count > 0 ? total / count : 0;
     const dimAvg = count > 0
-      ? { Innovation: dimTotals.Innovation/count, Feasibility: dimTotals.Feasibility/count, Impact: dimTotals.Impact/count }
-      : { Innovation: 0, Feasibility: 0, Impact: 0 };
+      ? Object.fromEntries(STATE.dimensions.map(d => [d, dimTotals[d]/count]))
+      : Object.fromEntries(STATE.dimensions.map(d => [d, 0]));
     return { ...team, avg, dimAvg, voteCount: count, caseName: bc.name, caseColor: bc.color };
   }).sort((a, b) => b.avg - a.avg);
 }
 
 function broadcast() {
   const completedP2 = Object.values(STATE.phase2votes).filter(v =>
-    STATE.winners.length > 0 && STATE.winners.every(id => v[id] && v[id].Innovation)
+    STATE.winners.length > 0 && STATE.winners.every(id => v[id] && STATE.dimensions.some(d => v[id][d]))
   ).length;
   io.emit('update', {
     phase: STATE.phase,
@@ -428,7 +426,7 @@ app.get('/vote', (req, res) => {
   });
 
   const existingVotes = STATE.phase2votes[voterId] || {};
-  const allVoted = finalists.every(f => existingVotes[f.id] && existingVotes[f.id].Innovation);
+  const allVoted = finalists.every(f => existingVotes[f.id] && STATE.dimensions.some(d => existingVotes[f.id][d]));
 
   const css = `*{margin:0;padding:0;box-sizing:border-box}body{background:#f8fafc;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:40px}header{background:#0a0a0a;color:#fff;padding:20px;text-align:center;border-bottom:3px solid #dc2626}header h1{font-size:1.1rem;font-weight:700}header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:4px}.container{max-width:540px;margin:0 auto;padding:20px}.confirm-banner{background:#0a0a0a;color:#fff;border-radius:16px;padding:24px 20px;margin-bottom:24px;text-align:center}.confirm-banner h2{font-size:1.2rem;font-weight:700;margin-bottom:4px}.confirm-banner p{font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:16px}.confirm-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #1a1a1a}.confirm-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.confirm-name{flex:1;font-size:0.9rem;font-weight:600;text-align:left}.confirm-scores{display:flex;gap:8px}.confirm-score{text-align:center;min-width:36px}.confirm-score-val{font-size:1rem;font-weight:800}.confirm-score-lbl{font-size:0.6rem;color:rgba(255,255,255,0.4);text-transform:uppercase}.edit-btn{display:block;width:100%;padding:12px;border:2px solid #dc2626;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;color:#dc2626;background:transparent;margin-top:16px;letter-spacing:0.5px;text-transform:uppercase}.team-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);margin-bottom:28px;overflow:hidden}.team-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:3px solid #f1f5f9}.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}.team-name{font-size:1rem;font-weight:700;color:#1e293b}.team-case{font-size:0.75rem;margin-top:2px}.voted{margin-left:auto;background:#fee2e2;color:#dc2626;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:20px}.dims{padding:16px 20px}.dim{margin-bottom:20px}.dim-title{font-size:0.85rem;font-weight:700;color:#475569;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}.radio-row{display:flex;gap:8px}.radio-row input[type=radio]{display:none}.radio-row label{flex:1;height:50px;border-radius:10px;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all 0.1s}.radio-row input[type=radio]:checked+label{color:#fff;border-color:currentColor}.submit{display:block;width:100%;padding:16px;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;margin-top:8px;letter-spacing:0.5px;text-transform:uppercase}`;
 
@@ -448,7 +446,7 @@ app.get('/vote', (req, res) => {
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Grand Final Vote</title><style>${css}</style></head>
 <body>
-<header><h1>Grand Final</h1><p>Score all 3 finalists — Innovation, Feasibility, Impact</p></header>
+<header><h1>Grand Final</h1><p>Score all 3 finalists — Creativity, Feasibility, Effectiveness, Collaboration</p></header>
 <div class="container">
   <div class="confirm-banner">
     <h2>Votes Saved!</h2>
@@ -484,7 +482,7 @@ app.get('/vote', (req, res) => {
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Grand Final Vote</title><style>${css}</style></head>
 <body>
-<header><h1>Grand Final</h1><p>Score all 3 finalists — Innovation, Feasibility, Impact</p></header>
+<header><h1>Grand Final</h1><p>Score all 3 finalists — Creativity, Feasibility, Effectiveness, Collaboration</p></header>
 <div class="container">
 <form method="POST" action="/vote">
 ${teamsHtml}
