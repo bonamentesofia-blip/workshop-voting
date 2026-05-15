@@ -150,7 +150,7 @@ header p{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:4px}
         `<input type="radio" name="${dim}" id="r-${team.id}-${dim}-${n}" value="${n}"${cur===n?' checked':''}>`+
         `<label for="r-${team.id}-${dim}-${n}" style="color:${team.caseColor}">${n}</label>`
       ).join('');
-      const descHtml = '<div class="score-desc"><span>1<br>Not met</span><span>2<br>Met</span><span>3<br>Above expectation</span><span>4<br>Exceed expectations</span></div>';
+      const descHtml = '<div class="score-desc"><span>Not met</span><span>Met</span><span>Above expectation</span><span>Exceed expectations</span></div>';
       return `<div class="dim"><div class="dim-title">${dim}</div><div class="radio-row">${radios}</div>${descHtml}</div>`;
     }).join('');
 
